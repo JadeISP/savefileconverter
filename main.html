@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset='utf8'>
+<title> Jade's save file converter </title>
+<style>
+	:root {
+		color-scheme: dark;
+	}
+	* {
+		box-sizing: border-box;
+		user-select: none;
+	}
+
+	body {
+		margin-bottom: 0;
+		margin-left: 13vw;
+		margin-right: 13vw;
+		padding: 0;
+		background: radial-gradient(ellipse at 5% 8%, rgba(100, 130, 255, .25), transparent 100%), black;
+		font-family: system-ui;
+		min-height: 96vh;
+		max-height: 96vh;
+	}
+	#top {
+		padding-top: 6vh;
+	}
+	.inputwrapper {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 40px;
+		align-items: stretch;
+		max-width: 100%;
+	}
+	textarea {
+		background-color: #252539;
+		font-family: monospace;
+		resize: vertical;
+		overflow-wrap: anywhere;
+		width: 100%;
+		min-width: fit-content;
+		min-height: 200px;
+		padding: 18px;
+		border: none;
+	}
+	#output {
+		user-select: all;
+	}
+	textarea::placeholder {
+		color: #8594af;
+		opacity: .85;
+  		font-style: italic;
+	}
+	#input {
+		user-select: text;
+	}
+	textarea:focus {
+		outline: none;
+	}
+	.wrapper {
+		outline: 1px solid #283650;
+		border-radius: 10px;
+	}
+	.content-header {
+		margin-bottom: 10px;
+		padding-left: 10px;
+		font-size: 14px;
+		font-weight: bold;
+	}
+	.content-footer {
+		margin-top: 5px;
+		padding-left: 10px;
+		margin-bottom: 16px;
+	}
+	.right {
+		display: flex;
+		justify-content: right;
+		padding-right: 32px;
+		gap: 20px;
+	}
+	.right button {
+		border-radius: 10px;
+		border: 1px solid #454559;
+		background-color: #252539;
+		padding: 8px;
+		transition: filter 0.2s ease, transition 0.2s ease;
+	}
+	.right button:hover {
+		filter: brightness(1.25);
+		transform: translateY(1px);
+	}
+	select {
+	    background-color: #223253;
+	    color: #f0f3ff;
+	    border: 1px solid #465b82;
+	    border-radius: 6px;
+	    padding: 4px 6px;
+	    margin-left: 16px;
+	    cursor: pointer;
+	    outline: none;
+	    transition: filter .2s ease, border-color .2s ease;
+	}
+
+	select:hover {
+	    filter: brightness(1.25);
+	}
+	#convert {
+		background-color: #465b82;
+		border: 1px solid #364a52;
+		transition: filter 0.2s ease, transform 0.2s ease;
+	}
+	#convert:hover {
+		filter: brightness(1.25);
+		transform: translateY(-1px);
+	}
+	#convert:active {
+		transform: translateY(1px);
+	}
+</style>
+</head>
+<body>
+	<div id='top'>
+		<h1> Legacy Save File Converter </h1>
+		<p> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;convert between different saves </p>
+	</div>
+	<section class='inputwrapper'>
+		<div class='wrapper'>
+			<p class="content-header"> input </p>
+			<textarea id="input" placeholder="Paste your save here..."></textarea>
+			<p class="content-footer"> 
+				<div class="right">
+					<button id='paste'> Paste</button>
+					<button id='clear1'> Clear</button>
+				</div>
+			</p>
+		</div>
+		<div class='wrapper'>
+			<p class="content-header"> output </p>
+			<textarea id="output" placeholder="The converted save will appear here..." readonly></textarea>
+			<p class="content-footer"> 
+				<div class="right">
+					<button id='copy'> Copy</button>
+					<button id='clear2'> Clear</button>
+				</div>
+			</p>
+		</div>
+	</section>
+	<br>
+	<section id='a' style="gap: 10px; width: 100%; justify-content: center; transform: translateX(-11vw); display: flex;">
+		<label id="version"> Convert to version </label>
+		<select id="version">
+			<option value="1">Cklfoa (version 1)</option>
+			<option value="2">CklfoB (version 2)</option>
+			<option value="3">CklfoZ (version 3)</option>
+		</select>
+		<button id='convert' style='margin-left: 20px;'> Convert </button>
+	</section>
+<script>
+
+	const paste = document.getElementById("paste");
+	const copy = document.getElementById("copy");
+	const clearinput = document.getElementById("clear1");
+	const clearoutput = document.getElementById('clear2');
+	const input = document.getElementById("input");
+	const output = document.getElementById("output");
+	const convertTo = document.querySelectorAll("#version")[1];
+
+	clearinput.addEventListener("click", () => {
+		input.value = '';
+	});
+
+	clearoutput.addEventListener("click", () => {
+		output.value = '';
+	});
+
+
+
+	paste.addEventListener("click", async() => {
+		try {
+			// not sure if setting the .value as it errors 
+			// would cause adverse reactions
+			let val = await navigator.clipboard.readText()
+			if (!val || val === '[object Promise]') return false;
+			input.value = val;
+		} catch(e) { alert('Could not paste from clipboard:', e)};
+	});
+	copy.addEventListener("click", async() => {
+		try {
+			let val = output.value;
+			navigator.clipboard.writeText(val);
+		} catch(e) { alert('Could not paste from clipboard:', e)}
+	});
+	// I'm rushing and not thinking, I'll get a better name later
+	async function foo() {
+		// imperitive programming wooo!
+		const val = +(convertTo.value);
+		console.log(val);
+		if (!val) alert('something went wrong, try clicking another version and click back onto it, if this problmem persists, I will crumble into a pile of blob.');
+		let save = input.value.trim();
+		if (save === '') alert('You must paste a save before converting');
+		let ctx = await pipeLine(save, val);
+		output.value = ctx;
+	};
+	convert.addEventListener('click', foo);
+	/* 
+	    joe on stackoverflow at https://stackoverflow.com/questions/36185110/is-there-a-way-to-use-browsers-native-gzip-decompression-using-javascript
+	    is a life saver
+	*/
+	async function gunzipString(str) {
+	    const byteArr = Uint8Array.from(str, char=>char.charCodeAt(0));
+	    const stream = new Blob([byteArr])
+	            .stream()
+	            .pipeThrough(new DecompressionStream('gzip'));
+	    return await new Response(stream).text();
+	};
+	async function gzipString(str) {
+	    return await new Response(
+	        new Blob([str])
+	            .stream()
+	            .pipeThrough(
+	                new CompressionStream("gzip")
+	            )
+	    ).arrayBuffer();
+	};
+	function encodeBase64(str) {
+	    const bytes = new TextEncoder().encode(str);
+	    let binary = '';
+	    for (let i = 0; i < bytes.length; i++) {
+	        binary += String.fromCharCode(bytes[i]);
+	    }
+	    return btoa(binary);
+	};
+
+	function decodeBase64(base64) {
+	    const binary = atob(base64);
+	    const bytes = Uint8Array.from(binary, char => char.charCodeAt(0));
+	    return new TextDecoder().decode(bytes);
+	};
+	// convert the gzipStream back to base 64
+	function asBase64(arraybuffer) {
+	    return btoa(String.fromCharCode(...new Uint8Array(arraybuffer)));
+	};
+	function convertNormal(str) {
+	    let out = {};
+	    let arr = str.replace('{', '').replace('}', '').split(',');
+	    for (const el of arr) {
+	        let [key, ...value] = el.split('=');
+	        let val = value.join('=');
+	        out[key] = val.includes('|') ? val.split('|') : val;
+	    }
+	    return out;
+	}
+	async function toProperJSON(string) {
+	    switch(string.slice(0, 6)) {
+	    
+	        case 'Cklfoa': {
+	            let save = string.slice(6);
+	            let str = atob(save);
+	            return convertNormal(str);
+	        }
+	            
+	        case 'CklfoB': {
+	            let save = string.slice(6)
+	            let b64decoded = atob(save);
+	            let str = await gunzipString(b64decoded);
+	            return convertNormal(str);
+	        }
+	            
+	        case 'CklfoZ': {
+	            let save = string.slice(6)
+	            let b64decoded = atob(save);
+	            return JSON.parse(await gunzipString(b64decoded));
+	        }
+
+	        default: 
+	            throw new Error(`substring ${string.slice(0, 6)} is not recognized`);
+	    };
+	};
+	function checkDifferenceOldToNew() {
+	    let output = [];
+	    for (const el in res1) {
+	        let paths = el.split('_');
+	        let chain = res3;
+	        for (const path of paths) {
+	            try {
+	                chain = chain[path];
+	            } catch(e) {};
+	        };
+	        if (chain === undefined) output.push(el);
+	    };
+	    return output;
+	};
+	async function convertOldToNew(str) {
+	    let save = await toProperJSON(str);
+
+	    let chain = {};
+	    Object.entries(save).forEach(([fullPath, val]) => {
+	        const paths = fullPath.split('_');
+	        let current = chain;
+	        paths.forEach((key, i) => {
+	            if (i === paths.length - 1) {
+	                current[key] = val;
+	            } else {
+	                current[key] ??= {};
+	                current = current[key];
+	            }
+	        });
+	    });
+	    
+	    return chain;
+	};
+	function convertNewToOld(obj, prefix = "", result = {}) {
+	    for (const [key, value] of Object.entries(obj)) {
+	        let fullPath;
+	        if (prefix) {
+	            fullPath = prefix + "_" + key;
+	        } else {
+	            fullPath = key;
+	        };
+	        if (value !== null && typeof value === "object" && !Array.isArray(value)) {
+	            convertNewToOld(value, fullPath, result);
+	        } else {
+	            result[fullPath] = value;
+	        };
+	    };
+	    return result;
+	};
+	// literally just do the opposite of convertNormal
+	function toOldSaveString(obj) {
+	    const arr = convertNewToOld(obj);
+	    return '{' + Object.entries(arr).map(([key, value]) => {
+	        let val;
+	        if (Array.isArray(value)) {
+	            val = value.join('|');
+	        } else {
+	            val = String(value);
+	        };
+	        return `${key}=${val}`;
+	    }).join(',') + '}';
+	};
+
+	async function pipeLine(saveStr, toVer) {
+	    let type = saveStr.slice(0, 6);
+	    let newSave;
+	    switch (type) {
+	        case 'Cklfoa': {
+	            if (toVer === 1) {
+	                newSave = saveStr;
+	                break;
+	            };
+	            if (toVer === 2) {
+	                let save = saveStr.replace('CklfoB', '');
+	                newSave = 'CklfoB' + asBase64(await gzipString(btoa(save)));
+	                break;
+	            };
+	            if (toVer === 3) {
+	                newSave = 'CklfoZ' + encodeBase64(toOldSaveString(await convertOldToNew(saveStr)));
+	                break;
+	            };
+	        }
+
+	        case 'CklfoB': {
+	            if (toVer === 1) {
+	                let str = saveStr.replace('CklfoB', '')
+	                newSave = 'Cklfoa' + btoa(await gunzipString(atob(str)))
+	                break;
+	            };
+	            if (toVer === 2) {
+	                newSave = saveStr;
+	                break;
+	            };
+	            if (toVer === 3) {
+	                newSave = 'CklfoZ' + asBase64(await gzipString(JSON.stringify(await convertOldToNew(saveStr))));
+	                break;
+	            };
+	        }
+
+	        case 'CklfoZ': {
+	            if (toVer === 1) {
+	                newSave = 'Cklfoa' + encodeBase64(toOldSaveString(await toProperJSON(saveStr)));
+	                break;
+	            };
+	            if (toVer === 2) {
+	                newSave = 'CklfoB' + asBase64(await gzipString(toOldSaveString(await toProperJSON(saveStr))));
+	                break;
+	            };
+	            if (toVer === 3) {
+	                newSave = saveStr;
+	                break;
+	            };
+	        }
+	        default:
+	            console.log(`${type} is not a recognized prefix.`);
+	    };
+	    return newSave;
+	};
+</script>
+</body>
+</html>
